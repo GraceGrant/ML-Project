@@ -19,6 +19,24 @@ rm(list = ls()) # Clean your environment:
 gc() # garbage collection - It can be useful to call gc after a large object has been removed, as this may prompt R to return memory to the operating system.
 library(tidyverse)
 list.files('code/', full.names = T, recursive = T) %>% .[grepl('.R', .)] %>% as.list() %>% walk(~source(.))
+#this line of code is used to execute any functions I've made that are in the code folder
+```
+
+```{r loading data and cleaning, include = FALSE}
+alldata <- read.csv("/Users/gracegrant/Documents/Postgrad/Masters/Data Science/ML Project/data/atp_tennis.csv")
+alldata
+
+#I'm not entirely sure what the "International" tournament type is so I'm going to check how many times Federer played in these tournaments to see how important they are
+filtered_data <- alldata %>%
+  filter(Player_1 == "Federer R." | Player_2 == "Federer R.", Series == "ATP500")
+num_appearances <- nrow(filtered_data)
+#This shows he only played in 167 "International" tournaments compared to much more more Grand Slams and Masters events.
+
+#I'm therefore going to reduce my dataframe to exclude "International", "ATP250" and "ATP500" events
+reduced_data <- alldata %>% filter(!(Series %in% c("International", "ATP250", "ATP500", "International Gold")))
+
+#I'm just checking what's in the "Series" column to make sure the above code worked
+unique_characters <- unique(reduced_data$Series)
 ```
 
 
