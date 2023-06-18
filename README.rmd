@@ -18,25 +18,65 @@ Add binary files in bin, and closed R functions in code. Human Readable settings
 rm(list = ls()) # Clean your environment:
 gc() # garbage collection - It can be useful to call gc after a large object has been removed, as this may prompt R to return memory to the operating system.
 library(tidyverse)
+library(lubridate)
+library(RColorBrewer)
+library(kableExtra)
 list.files('code/', full.names = T, recursive = T) %>% .[grepl('.R', .)] %>% as.list() %>% walk(~source(.))
 #this line of code is used to execute any functions I've made that are in the code folder
 ```
 
-```{r loading data and cleaning, include = FALSE}
-alldata <- read.csv("/Users/gracegrant/Documents/Postgrad/Masters/Data Science/ML Project/data/atp_tennis.csv")
-alldata
 
-#I'm not entirely sure what the "International" tournament type is so I'm going to check how many times Federer played in these tournaments to see how important they are
-filtered_data <- alldata %>%
-  filter(Player_1 == "Federer R." | Player_2 == "Federer R.", Series == "ATP500")
-num_appearances <- nrow(filtered_data)
-#This shows he only played in 167 "International" tournaments compared to much more more Grand Slams and Masters events.
+```{r loading data}
+Lst_matches <- 
+    list.files("data/Tennis/", full.names = T) %>% 
+    .[grepl("atp_matches", .)] %>% 
+    .[!grepl("doubles|qual|amateur", .)] %>% as.list()
 
-#I'm therefore going to reduce my dataframe to exclude "International", "ATP250" and "ATP500" events
-reduced_data <- alldata %>% filter(!(Series %in% c("International", "ATP250", "ATP500", "International Gold")))
+playerinfo <-
+        read_csv("data/Tennis/atp_players.csv") %>% select(player_id, hand, height)
 
-#I'm just checking what's in the "Series" column to make sure the above code worked
-unique_characters <- unique(reduced_data$Series)
+# I want to only look at Grandslams, Masters and Finals - use Tournament_Inputs to filter.
+suppressWarnings(result_Large_events <- Data_Prep_Function(Lst, Tournament_Inputs = c("G", "M", "F")))
+
+Lst_rankings <- list.files("data/Tennis/", full.names = T) %>% 
+    .[grepl("atp_rankings", .)] %>% as.list()
+rankings <- Ranking_Prep_Function(Lst_rankings) %>% group_by(year = lubridate::year(date)) %>% filter(date == max(date))
 ```
+This data shows all the stats since the start of the Open Era of tennis (1968, when it became professional) for the main tournaments (Grand Slams, Masters and Tour Finals) as well as the year end top 20 rankings from the 1970s to 2021.
+
+Descriptive stats
+I want to look at some stats through time - so maybe grouped into decades who won the most Grand Slams or finished world number 1 etc. But then i can show how since the 2000s, the game has been dominated by the Big 3 and so I can focus on them. It would also be nice to include something about the new guys - Alcaraz, Ruud, Zverev, Tsitsipas etc. This can all be part of my introductory statistics and then the model will be for the Big 3. 
+
+The grouping into decades thing didn't work as well as I would have liked so let me rather just explain things over time through research as then focus on doing stats for the current guys.
+
+```{r}
+finals <- result_Large_events %>% filter(round == "F")
+
+frequent_winners <- finals %>% filter(tourney_level == "G") %>% 
+  mutate(decade = floor_date(date, "10 years")) %>%
+  group_by(decade, winner_name) %>%
+  summarize(winner_count = n()) %>%
+  top_n(1, winner_count) %>%
+  arrange(decade, desc(winner_count)) 
+
+
+
+
+
+
+#ggplot(frequent_winners, aes(fill=winner_name, y=winner_count, x=winner_name)) + 
+    #geom_bar(position="dodge", stat="identity") +
+    #ggtitle("Top Grand Slam Winners per Decade") +
+    #theme_bw() +
+    #facet_wrap(~decade) +
+    #theme(legend.position="none") +
+    #xlab("")
+```
+```{r}
+table <- current_winners(finals)
+table
+```
+
+
 
 
