@@ -73,6 +73,11 @@ frequent_winners <- finals %>% filter(tourney_level == "G") %>%
     #xlab("")
 ```
 ```{r}
+bar_top <- top_GS(finals)
+bar_top
+```
+
+```{r}
 #table <- current_winners(finals)
 #table
 ```
@@ -113,6 +118,15 @@ pivot_table <- pivot_table %>% fill(everything(), .direction = "down")
 # Remove duplicate rows
 pivot_table <- distinct(pivot_table, .keep_all = TRUE)
 ```
+
+I still need to fix the code in the GS_Table function so that it produces a table but basically, that shows how Federer, Nadal and Djokovic have dominated since 2003, when Federer won his first Grand Slam. 
+I'm therefore going to filter the data to include only start at 2003 and I'll use this data frame for my model.
+```{r}
+model_data <- model_prep(result_Large_events)
+```
+
+
+
 
 
 
