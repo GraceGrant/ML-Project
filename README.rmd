@@ -119,12 +119,28 @@ pivot_table <- pivot_table %>% fill(everything(), .direction = "down")
 pivot_table <- distinct(pivot_table, .keep_all = TRUE)
 ```
 
+
+
 I still need to fix the code in the GS_Table function so that it produces a table but basically, that shows how Federer, Nadal and Djokovic have dominated since 2003, when Federer won his first Grand Slam. 
-I'm therefore going to filter the data to include only start at 2003 and I'll use this data frame for my model.
+I'm therefore going to filter the data to include only start at 2003 and I'll use this data frame for my model. I've also filtered out some of the other columns that either don't matter or have NAs.
 ```{r}
-model_data <- model_prep(result_Large_events)
+model_data <- model_prep(result_Large_events) 
+
+model <- model_data %>% select(tourney_name, surface, minutes, Player1, Player2, Player1_Rank, Player2_Rank, 
+                         Player1_ht, Player2_ht, Player1_age, Player2_age, Player1_1stin, Player2_1stin, Player1_ace, Player2_ace,
+                         Player1_bpSaved, Player2_bpSaved, Player1_bpFaced, Player2_bpFaced, Match_Winner)
+GS <- model_data %>% filter(tourney_level == "G")
+#I've taken out tourney_level in my model_data so I'll just have to change that if I want to subset by Grand Slam
+#I've also removed round which I need to take into account if I want to subset by finals
+
+
+
 ```
 
+
+Confusion matrix
+I could also create another model that just looks at Grand Slams to see if there's a difference. Especially because Grand Slams are the metric a lot of people use to determine who's the best.
+Should I subset by finals too?
 
 
 
