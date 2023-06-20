@@ -4,6 +4,7 @@ model_prep <- function(result_Large_events){
         select(-winner_rank_points, -loser_rank_points, -winner_hand, -loser_hand, -winner_entry, -loser_entry,
                -winner_seed, -loser_seed, -tourney_date) %>% filter(!is.na(minutes)) %>% na.omit()
 
+
     set.seed(123)
 
     # create a random binary variable

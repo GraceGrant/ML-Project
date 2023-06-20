@@ -21,6 +21,7 @@ library(tidyverse)
 library(lubridate)
 library(RColorBrewer)
 library(kableExtra)
+library(xtable)
 list.files('code/', full.names = T, recursive = T) %>% .[grepl('.R', .)] %>% as.list() %>% walk(~source(.))
 #this line of code is used to execute any functions I've made that are in the code folder
 ```
@@ -49,6 +50,12 @@ I want to look at some stats through time - so maybe grouped into decades who wo
 
 The grouping into decades thing didn't work as well as I would have liked so let me rather just explain things over time through research as then focus on doing stats for the current guys.
 
+I can do some research briefly explaining general consensus on who has been the best over time. I can then show the bar graph of the top Grand Slams and use this to motivate focusing on just the Big 3.
+Following this, I can use Nico's massive compiler function to compare the Big 3 to each other and then hypothesis as to who I think is the best. This will be my "literature review". 
+Then I go into the actual model (XGBoost) and explain what I did there (e.g. the binary distribution for feature and target engineering, hyperparameter tuning). I can subset by Grand Slams as a second model but I'll just see if I have enough time. This is my data and methodology.
+Lastly, I show my results and discuss them (maybe mention that there are more factors that can link to the GOAT).
+
+
 ```{r}
 finals <- result_Large_events %>% filter(round == "F")
 
@@ -75,6 +82,7 @@ frequent_winners <- finals %>% filter(tourney_level == "G") %>%
 ```{r}
 bar_top <- top_GS(finals)
 bar_top
+#still need to try order
 ```
 
 ```{r}
@@ -111,6 +119,8 @@ filterA <- pivot_table %>% filter(!is.na(`Australian Open`)) %>% select(c(`Austr
 merged_df <- merge(merge(merge(filterA, filterR, by = "year"), filterW, by = "year"), filterUS, by = "year")
 
 merged_df
+my_table <- xtable(merged_df)
+
 
 # Fill the NAs with empty strings
 pivot_table <- pivot_table %>% fill(everything(), .direction = "down")
@@ -119,6 +129,18 @@ pivot_table <- pivot_table %>% fill(everything(), .direction = "down")
 pivot_table <- distinct(pivot_table, .keep_all = TRUE)
 ```
 
+From this function, I can plot some nice functions for this that relate to the features in my model. I can also use this to hypothesise as to who the model will predict as the best player.
+```{r Nico's win function}
+Result <- 
+    c("Rafael Nadal", "Roger Federer", "Novak Djokovic") %>% as.list() %>% 
+    map_df(~Winsummary_Function_Compiler(result_Large_events,
+                                 Player_Name = .,
+                                 playerinfo, 
+                                 Top_N = 5,
+                                 Silent = F))
+
+Result %>% View
+```
 
 
 I still need to fix the code in the GS_Table function so that it produces a table but basically, that shows how Federer, Nadal and Djokovic have dominated since 2003, when Federer won his first Grand Slam. 
@@ -191,6 +213,11 @@ temp <- model_data %>%
     head(50)
 
 top_50 <- model_data %>% filter(winner_name %in% temp$winner_name)
+top_50$surface_number <- as.factor(top_50$surface_number)
+top_50$tournament_id <- as.factor(top_50$tournament_id)
+top_50$Player1 <- as.factor(top_50$Player1)
+top_50$Player2 <- as.factor(top_50$Player2)
+top_50$Match_Winner <- as.factor(top_50$Match_Winner)
 ```
 
 Now onto the actual machine learning model
@@ -232,13 +259,26 @@ player_wins <- aggregate(predicted_winner ~ Player1, data = test_data, FUN = sum
 ```
 According to the default model, the top 3 players are Nadal, Federer and Djokovic in that order
 
-I need to convert all the categorical variables to factors and then I'm just going to subset the data to include the 53 players with the most frequent wins so I can still use a random forest.
+I need to convert all the categorical variables to factors and then I'm just going to subset the data to include the 53 players with the most frequent wins so I can still use a random forest. 
+Actually no, I can't do this because even though the winner column will have 50 factors, the loser column will have more than that so I'm going to have to use an XGboost. 
+```{r XGBoost}
+library(recipes)
+
+xgb_prep <- recipe(Match_Winner ~ ., data = train_data) %>%
+  step_integer(all_nominal()) %>%
+  prep(training = train_data, retain = TRUE) %>%
+  juice()
+
+X <- as.matrix(xgb_prep[setdiff(names(xgb_prep), "Match_Winner")])
+Y <- xgb_prep$Match_Winner
+```
+
 
 
 
 Confusion matrix
 I could also create another model that just looks at Grand Slams to see if there's a difference. Especially because Grand Slams are the metric a lot of people use to determine who's the best.
-Should I subset by finals too?
+Should I subset by finals too? No, I think 2 models is good enough.
 
 
 
