@@ -160,9 +160,20 @@ model_data <- model_data %>%
   mutate(surface_number = as.integer(as.factor(surface)))
 surfaces <- model_data %>% select(surface, surface_number) %>% distinct(surface, surface_number)
 
+#I need to convert all my categorical variables into factors
+model_data$surface_number <- as.factor(model_data$surface_number)
+model_data$tournament_id <- as.factor(model_data$tournament_id)
+model_data$Player1 <- as.factor(model_data$Player1)
+model_data$Player2 <- as.factor(model_data$Player2)
+model_data$Match_Winner <- as.factor(model_data$Match_Winner)
+
+#I also need to subset the data to only include the top 53 players so I can do a random forest
+top_53 <- model_data %>%
+  count(winner_name) %>%
+  arrange(desc(n)) %>%
+  top_n(53) 
+
 #Now to the actual model data frame
-
-
 model <- model_data %>% select(tournament_id, surface_number, minutes, Player1, Player2, Player1_Rank, Player2_Rank, 
                          Player1_ht, Player2_ht, Player1_age, Player2_age, Player1_1stin, Player2_1stin, Player1_ace, Player2_ace,
                          Player1_bpSaved, Player2_bpSaved, Player1_bpFaced, Player2_bpFaced, Match_Winner)
@@ -172,6 +183,14 @@ GS <- model_data %>% filter(tourney_level == "G")
 
 model$Player1_age <- round(model$Player1_age)
 model$Player2_age <- round(model$Player2_age)
+
+temp <- model_data %>% 
+    group_by(winner_name) %>% 
+    summarise(count = n()) %>% 
+    arrange(desc(count)) %>% 
+    head(50)
+
+top_50 <- model_data %>% filter(winner_name %in% temp$winner_name)
 ```
 
 Now onto the actual machine learning model
@@ -212,6 +231,8 @@ test_data$predicted_winner <- predictions_rf1
 player_wins <- aggregate(predicted_winner ~ Player1, data = test_data, FUN = sum)
 ```
 According to the default model, the top 3 players are Nadal, Federer and Djokovic in that order
+
+I need to convert all the categorical variables to factors and then I'm just going to subset the data to include the 53 players with the most frequent wins so I can still use a random forest.
 
 
 
