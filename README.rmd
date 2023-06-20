@@ -126,16 +126,93 @@ I'm therefore going to filter the data to include only start at 2003 and I'll us
 ```{r}
 model_data <- model_prep(result_Large_events) 
 
-model <- model_data %>% select(tourney_name, surface, minutes, Player1, Player2, Player1_Rank, Player2_Rank, 
+#I need to assign numerical values to my tournament names
+model_data <- separate(model_data, tourney_id, into = c("year", "tournament_id"), sep = "-")
+model_data <- model_data %>% select(-year)
+
+model_data <- model_data %>%
+  mutate(tournament_id = ifelse(tournament_id == "M006", "404", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "M007", "403", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0410", "410", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "M021", "1536", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "M009", "416", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0421", "421", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "M024", "422", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0352", "352", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0605", "605", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0403", "403", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0404", "404", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0416", "416", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0422", "422", tournament_id))
+
+tournament_id <- model_data %>% select(tourney_name, tournament_id) %>% distinct(tourney_name, tournament_id)
+
+#This assigns the player IDs
+winner_id <- model_data %>% select(winner_name, winner_id) 
+winner_id <- winner_id %>% rename(name = winner_name, player_id = winner_id)
+loser_id <- model_data %>% select(loser_name, loser_id)
+loser_id <- loser_id %>% rename(name = loser_name, player_id = loser_id)
+player_id <- merge(winner_id, loser_id, by = "player_id") 
+player_id <- player_id %>% distinct(player_id, name.x, name.y) %>% select(-name.y)
+
+#Lastly, I need to assign numerical values to my surfaces and then I'm good to go
+model_data <- model_data %>%
+  mutate(surface_number = as.integer(as.factor(surface)))
+surfaces <- model_data %>% select(surface, surface_number) %>% distinct(surface, surface_number)
+
+#Now to the actual model data frame
+
+
+model <- model_data %>% select(tournament_id, surface_number, minutes, Player1, Player2, Player1_Rank, Player2_Rank, 
                          Player1_ht, Player2_ht, Player1_age, Player2_age, Player1_1stin, Player2_1stin, Player1_ace, Player2_ace,
                          Player1_bpSaved, Player2_bpSaved, Player1_bpFaced, Player2_bpFaced, Match_Winner)
 GS <- model_data %>% filter(tourney_level == "G")
 #I've taken out tourney_level in my model_data so I'll just have to change that if I want to subset by Grand Slam
 #I've also removed round which I need to take into account if I want to subset by finals
 
+model$Player1_age <- round(model$Player1_age)
+model$Player2_age <- round(model$Player2_age)
+```
 
+Now onto the actual machine learning model
+```{r random forest}
+install.packages("ranger")
+install.packages("h2o")
+
+library(ranger)   # a c++ implementation of random forest 
+library(h2o)      # a java-based implementation of random forest
 
 ```
+Model beginnings
+Need p x 10 trees to start off with
+p is the number of features (i.e. variables), which in my case is 20 
+p=200
+
+I've got a classification problem so m(try) = squareroot(p)
+m(try) = 4 
+
+node size = 1 (can increase this if computational time is too long)
+
+Can try sampling without replacement vs with to see which is better - I probably have unbalanced categories so without might be better.
+Decreasing the sample size leads to more diverse trees and thereby lower between-tree correlation, which can have a positive effect on the prediction accuracy. Consequently, if there are a few dominating features in your data set, reducing the sample size can also help to minimize between-tree correlation.
+
+```{r default model}
+set.seed(123)  # Set seed for reproducibility
+train_indices <- sample(1:nrow(model), 0.7 * nrow(model)) #training set 70% and testing set 30%
+train_data <- model[train_indices, ]
+test_data <- model[-train_indices, ]
+
+model_rf1 <- ranger(Match_Winner ~ ., data = train_data)
+model_rf1
+(default_rmse <- sqrt(model_rf1$prediction.error))
+
+predictions_rf1 <- predict(model_rf1, data = test_data)$predictions
+
+test_data$predicted_winner <- predictions_rf1
+player_wins <- aggregate(predicted_winner ~ Player1, data = test_data, FUN = sum)
+```
+According to the default model, the top 3 players are Nadal, Federer and Djokovic in that order
+
 
 
 Confusion matrix
