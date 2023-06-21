@@ -39,7 +39,7 @@ playerinfo <-
         read_csv("data/Tennis/atp_players.csv") %>% select(player_id, hand, height)
 
 # I want to only look at Grandslams, Masters and Finals - use Tournament_Inputs to filter.
-suppressWarnings(result_Large_events <- Data_Prep_Function(Lst, Tournament_Inputs = c("G", "M", "F")))
+suppressWarnings(result_Large_events <- Data_Prep_Function(Lst_matches, Tournament_Inputs = c("G", "M", "F")))
 
 Lst_rankings <- list.files("data/Tennis/", full.names = T) %>% 
     .[grepl("atp_rankings", .)] %>% as.list()
@@ -311,7 +311,7 @@ player_wins_2 <- aggregate(predicted_winner ~ Player1, data = test_data_2, FUN =
 ```
 
 
-Okay, I need to do all the hyperparameter tuning stuff and run the model again. I can subset my Grand Slams too.
+Okay, I need to do all the hyperparameter tuning stuff and run the model again. I can subset by Grand Slams too.
 
 ```{r hyperparameter tuning}
 # create hyperparameter grid
@@ -364,9 +364,16 @@ model_rf3 <- ranger(
 predictions_rf3 <- predict(model_rf3, data = test_data_2)$predictions
 confusion_matrix2 <- confusionMatrix(predictions_rf3, data = test_data_2$Match_Winner)
 confusion_matrix2
+
+test_data_2$predicted_winner <- predictions_rf3
+
+player1_wins <- test_data_2[test_data_2$Match_Winner == 1, ]
+win_counts <- table(player1_wins$Player1)
+sorted_counts <- sort(win_counts, decreasing = TRUE)
+sorted_counts
 ```
 
-
+This shows Nadal, Djokovic and Federer now. This is just the number of wins for the players so a better metric would be to get the win percentage. I think I can do this by getting the number of matches each of the (maybe top 10) players played in the test data and then go wins divided by matches. 
 
 
 I need to convert all the categorical variables to factors and then I'm just going to subset the data to include the 53 players with the most frequent wins so I can still use a random forest. 
