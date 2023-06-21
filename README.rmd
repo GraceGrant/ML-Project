@@ -22,6 +22,8 @@ library(lubridate)
 library(RColorBrewer)
 library(kableExtra)
 library(xtable)
+library(caret)
+library(ranger)
 list.files('code/', full.names = T, recursive = T) %>% .[grepl('.R', .)] %>% as.list() %>% walk(~source(.))
 #this line of code is used to execute any functions I've made that are in the code folder
 ```
@@ -205,52 +207,11 @@ GS <- model_data %>% filter(tourney_level == "G")
 
 model$Player1_age <- round(model$Player1_age)
 model$Player2_age <- round(model$Player2_age)
-
-temp <- model_data %>% 
-    group_by(winner_name) %>% 
-    summarise(count = n()) %>% 
-    arrange(desc(count)) %>% 
-    head(50)
-
-top_50 <- model_data %>% filter(winner_name %in% temp$winner_name)
-top_50$surface_number <- as.factor(top_50$surface_number)
-top_50$tournament_id <- as.factor(top_50$tournament_id)
-top_50$Player1 <- as.factor(top_50$Player1)
-top_50$Player2 <- as.factor(top_50$Player2)
-top_50$Match_Winner <- as.factor(top_50$Match_Winner)
-
-temp2 <- model_data %>% 
-    group_by(winner_id) %>% 
-    summarise(count = n()) %>% 
-    arrange(desc(count)) %>% 
-    head(50)
-
-top_50_again <- model_data %>% filter(winner_id %in% temp2$winner_id)
-top_50_again$surface_number <- as.factor(top_50_again$surface_number)
-top_50_again$tournament_id <- as.factor(top_50_again$tournament_id)
-top_50_again$Player1 <- as.factor(top_50_again$Player1)
-top_50_again$Player2 <- as.factor(top_50_again$Player2)
-top_50_again$Match_Winner <- as.factor(top_50_again$Match_Winner)
 ```
 
 Okay, so I need to reduce my data frame so that I just have the top 50 most commonly seen winner names so I have less factors to deal with (and hopefully random forest works). I think though that I need to do this before I do the random binomial distribution thing because what I've tried to do just hasn't worked. 
 
-```{r trying again}
-temp3 <- model_data %>%
-  count(winner_name) %>%
-  top_n(50, n) %>%
-  select(winner_name)
 
-top_50_3 <- model_data %>% filter(winner_name %in% temp3$winner_name)
-top_50_3 <- as.factor(top_50_3)
-
-top_50_3$surface_number <- as.factor(top_50_3$surface_number)
-top_50_3$tournament_id <- as.factor(top_50_3$tournament_id)
-top_50_3$Player1 <- as.factor(top_50_3$Player1)
-top_50_3$Player2 <- as.factor(top_50_3$Player2)
-top_50_3$Match_Winner <- as.factor(top_50_3$Match_Winner)
-
-```
 
 ```{r still trying}
 model_again <- model_prep_attempt(result_Large_events)
@@ -299,17 +260,10 @@ model_2$Player2_age <- round(model_2$Player2_age)
 
 
 Now onto the actual machine learning model
-```{r random forest}
-install.packages("ranger")
-install.packages("h2o")
 
-library(ranger)   # a c++ implementation of random forest 
-library(h2o)      # a java-based implementation of random forest
-
-```
 Model beginnings
 Need p x 10 trees to start off with
-p is the number of features (i.e. variables), which in my case is 20 
+p is the number of features (i.e. variables), which in my case is 19 
 p=200
 
 I've got a classification problem so m(try) = squareroot(p)
@@ -339,107 +293,87 @@ According to the default model, the top 3 players are Nadal, Federer and Djokovi
 
 ```{r default again}
 set.seed(123)  # Set seed for reproducibility
-train_indices_2 <- sample(1:nrow(model), 0.7 * nrow(model)) #training set 70% and testing set 30%
-train_data_2 <- model[train_indices_2, ]
-test_data_2 <- model[-train_indices_2, ]
+train_indices_2 <- sample(1:nrow(model_2), 0.7 * nrow(model_2)) #training set 70% and testing set 30%
+train_data_2 <- model_2[train_indices_2, ]
+test_data_2 <- model_2[-train_indices_2, ]
 
 model_rf2 <- ranger(Match_Winner ~ ., data = train_data_2)
 (default_rmse <- sqrt(model_rf2$prediction.error))
 
 predictions_rf2 <- predict(model_rf2, data = test_data_2)$predictions
+confusion_matrix1 <- confusionMatrix(predictions_rf2, data = test_data_2$Match_Winner)
+confusion_matrix1
 
 test_data_2$predicted_winner <- predictions_rf2
 player_wins_2 <- aggregate(predicted_winner ~ Player1, data = test_data_2, FUN = sum)
+
+
+```
+
+
+Okay, I need to do all the hyperparameter tuning stuff and run the model again. I can subset my Grand Slams too.
+
+```{r hyperparameter tuning}
+# create hyperparameter grid
+hyper_grid <- expand.grid(
+  mtry = floor(19 * c(.1, .15, .25, .333, .4)),
+  min.node.size = c(1, 3, 5, 10), 
+  replace = c(TRUE, FALSE),                               
+  sample.fraction = c(.5, .63, .8),                       
+  rmse = NA                                               
+)
+
+# execute full cartesian grid search
+for(i in seq_len(nrow(hyper_grid))) {
+  # fit model for ith hyperparameter combination
+  fit <- ranger(
+    formula         = Match_Winner ~ ., 
+    data            = train_data_2, 
+    num.trees       = 19 * 10,
+    mtry            = hyper_grid$mtry[i],
+    min.node.size   = hyper_grid$min.node.size[i],
+    replace         = hyper_grid$replace[i],
+    sample.fraction = hyper_grid$sample.fraction[i],
+    verbose         = FALSE,
+    seed            = 123,
+  )
+  # export OOB error 
+  hyper_grid$rmse[i] <- sqrt(fit$prediction.error)
+}
+
+# assess top 10 models
+hyper_grid %>%
+  arrange(rmse) %>%
+  mutate(perc_gain = (default_rmse - rmse) / default_rmse * 100) %>%
+  head(10)
+```
+I should interpret what this says
+
+Now that I've performed my grid search, I need to set the new hyperparameters for my model.
+```{r tuned model}
+model_rf3 <- ranger(
+  Match_Winner ~ ., 
+  data = train_data_2,
+  mtry = 4,
+  min.node.size = 1,
+  replace = FALSE,
+  sample.fraction = 0.63,
+  seed = 123
+)
+
+predictions_rf3 <- predict(model_rf3, data = test_data_2)$predictions
+confusion_matrix2 <- confusionMatrix(predictions_rf3, data = test_data_2$Match_Winner)
+confusion_matrix2
 ```
 
 
 
 
 I need to convert all the categorical variables to factors and then I'm just going to subset the data to include the 53 players with the most frequent wins so I can still use a random forest. 
-Actually no, I can't do this because even though the winner column will have 50 factors, the loser column will have more than that so I'm going to have to use an XGboost. 
-```{r XGBoost default}
-library(recipes)
 
 
-xgb_prep <- recipe(Match_Winner ~ ., data = train_data) %>%
-  step_integer(all_nominal()) %>%
-  prep(training = train_data, retain = TRUE) %>%
-  juice()
-
-X <- as.matrix(xgb_prep[setdiff(names(xgb_prep), "Match_Winner")])
-Y <- xgb_prep$Match_Winner
-
-xgb.fit.default <- xgboost(
-  params = list(
-  eta = 0.1,
-  max_depth = 3,
-  min_child_weight = 3,
-  subsample = 0.8,
-  colsample_bytree = 1
-),
-  data = X,
-  label = Y,
-  nrounds = 600,
-  objective = "binary:logistic",
-  verbose = 0
-)
-
-vip::vip(xgb.fit.default)
 
 
-xgb_recipe <- recipe(Match_Winner ~ ., data = train_data)
-# Prepare the test data using the same preprocessing steps as the training data
-test_prep <- prep(xgb_recipe, newdata = test_data, retain = TRUE) %>%
-  step_integer(all_nominal()) %>%
-  juice()
-
-# Create a matrix representation for the test features
-X_test <- as.matrix(test_prep[, setdiff(names(test_prep), "Match_Winner")])
-
-# Extract the test target variable
-Y_test <- test_prep$Match_Winner
-
-
-```
-
-First hyperparameter tuning
-```{r}
-library(xgboost)
-library(dplyr)
-library(recipes)
-
-set.seed(123)  # Set seed for reproducibility
-train_indices <- sample(1:nrow(model), 0.7 * nrow(model)) #training set 70% and testing set 30%
-train_data <- model[train_indices, ]
-test_data <- model[-train_indices, ]
-
-xgb_prep <- recipe(Match_Winner ~ ., data = train_data) %>%
-  step_integer(all_nominal()) %>%
-  prep(training = train_data, retain = TRUE) %>%
-  juice()
-
-X <- as.matrix(xgb_prep[setdiff(names(xgb_prep), "Match_Winner")])
-Y <- xgb_prep$Match_Winner
-
-set.seed(123)
-tennis_xgb1 <- xgb.cv(
-  data = X,
-  label = Y,
-  nrounds = 600,
-  objective = "binary:logistic",
-  early_stopping_rounds = 50, 
-  nfold = 10,
-  params = list(
-    eta = 0.1,
-    max_depth = 3,
-    min_child_weight = 3,
-    subsample = 0.8,
-    colsample_bytree = 1.0),
-  verbose = 0
-) 
-
-min(tennis_xgb1$evaluation_log$test_rmse_mean)
-```
 
 
 
