@@ -198,8 +198,8 @@ plot3 <- surface_merged %>% filter(Player...1=="Novak Djokovic") %>%
     labs(title = "Novak Djokovic", x = NULL, y = NULL)+
     theme(legend.position = "none", axis.text.x = element_blank(), axis.text.y = element_blank())
     
+combined_pie <- grid.arrange(plot1, plot2, plot3,nrow=1, ncol=3, layout_matrix = rbind(c(1, 2, 3))) + theme(plot.margin = unit(c(0, 0, 0, 0), "lines"))
 
-grid.arrange(plot1, plot2, plot3,nrow=1)
 
 ```
 
@@ -224,14 +224,16 @@ This final table provides an overview of the Big 3's average match times across 
 These graphs and tables provide a sufficient overview of player performance and offers a comparison of the Big 3''s results and more specifics of their playing style and outcomes. However, to obtain a more definitive answer to the question of the GOAT, I make use of a random forest model which is discussed and interpreted in the next sections.
 
 # Data and methodology
-I have made use of a dataset that includes all the ATP matches from 1968 to 2022, within which is included match and player statistics. I merged these documents and filtered the data frame to include only main tour events i.e. Grand Slams, Masters and Tour Finals. These are the most important events in the tennis circuit and the ones in which the top players participate the most. I further subset the data to include matches from 2003, when Roger Federer won his first Grand Slam at Wimbledon. This allows me to focus on the time period of the Big 3 who are at the centre of the debate surrounding the GOAT. There is also a large amount of missing information in earlier dates, particularly in the 1960s, 70s and 80s, so subsetting to start at 2003 avoids issues related to NA values. Finally, I selected the features I deemed most relevant to my model to arrive at the final data frame. 
+I have made use of a dataset that includes all the ATP matches from 1968 to 2022, within which is included match and player statistics. I merged these documents and filtered the data frame to include only main tour events i.e. Grand Slams, Masters and Tour Finals. These are the most important events in the tennis circuit and the ones in which the top players participate the most. I further subset the data to include matches from 2003, when Roger Federer won his first Grand Slam at Wimbledon. This allows me to focus on the time period of the Big 3 who are at the centre of the debate surrounding the GOAT. There is also a large amount of missing information in earlier dates, particularly in the 1960s, 70s and 80s, so subsetting to start at 2003 avoids issues related to NA values. Finally, I selected the features I deemed most relevant to my model to arrive at the final data frame. These features included tournament names and surfaces, player characteristics - such as their height and age - and various match statistics linked to time taken, breakpoints faced and saved, aces and first serves in. These features were included for both the winner and the loser of each match. Additional feature engineering involved turning categorical variables, such as surface, into factors to ensure the model accurately processed the data.
+
+Lastly, I had to perform target engineering to establish an outcome variable to use for predictions in the model. I created a random binary variable and assigned the winner and loser of each game to player 1 and player 2 based on the random binary variable. This ensured that the new match winner column had an even split between player 1 winning or losing each match and could be used as the target variable.
 
 ## The random forest model
-Why I chose a random forest - reference textbook here.
-
-### Target and feature engineering
-bimodal distribution, factors
-
-### Hyperparameter tuning
+I made use of a random forest model model to process my data and perform predictions. Random forests are extensions or modifications of bagged decision trees and build a series of de-correlated trees to improve predictive performance. They have become a popular out-of-the-box learning algorithm because they enjoy good predictive performance and require minimal hyperparameter tuning @boehmke2019hands. My model had 19 features with a binary target variable, making it a classification problem. I constructed two random forest models, a baseline model using the default hyperparameters as outlined by @boehmke2019hands and a second model based on the hyperparamater tuning done via a grid search. The predictions from the hypertuned model as well as its accuracy measures are presented and discussed below, including comparisons with the default model. 
 
 # Results and discussion
+The following table shows the predictions from my hypertuned model, indicating that Roger Federer is the GOAT based on win percentage. 
+```{r results='asis'}
+
+```
+
