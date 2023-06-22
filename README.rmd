@@ -61,12 +61,7 @@ Lastly, I show my results and discuss them (maybe mention that there are more fa
 ```{r}
 finals <- result_Large_events %>% filter(round == "F")
 
-frequent_winners <- finals %>% filter(tourney_level == "G") %>% 
-  mutate(decade = floor_date(date, "10 years")) %>%
-  group_by(decade, winner_name) %>%
-  summarize(winner_count = n()) %>%
-  top_n(1, winner_count) %>%
-  arrange(decade, desc(winner_count)) 
+
 
 
 
@@ -125,14 +120,14 @@ my_table <- xtable(merged_df)
 
 
 # Fill the NAs with empty strings
-pivot_table <- pivot_table %>% fill(everything(), .direction = "down")
+#pivot_table <- pivot_table %>% fill(everything(), .direction = "down")
 
 # Remove duplicate rows
-pivot_table <- distinct(pivot_table, .keep_all = TRUE)
+#pivot_table <- distinct(pivot_table, .keep_all = TRUE)
 ```
 
 From this function, I can plot some nice functions for this that relate to the features in my model. I can also use this to hypothesise as to who the model will predict as the best player.
-```{r Nico's win function}
+```{r win function}
 Result <- 
     c("Rafael Nadal", "Roger Federer", "Novak Djokovic") %>% as.list() %>% 
     map_df(~Winsummary_Function_Compiler(result_Large_events,
@@ -141,7 +136,7 @@ Result <-
                                  Top_N = 5,
                                  Silent = F))
 
-Result %>% View
+
 ```
 
 
@@ -201,7 +196,7 @@ top_53 <- model_data %>%
 model <- model_data %>% select(tournament_id, surface_number, minutes, Player1, Player2, Player1_Rank, Player2_Rank, 
                          Player1_ht, Player2_ht, Player1_age, Player2_age, Player1_1stin, Player2_1stin, Player1_ace, Player2_ace,
                          Player1_bpSaved, Player2_bpSaved, Player1_bpFaced, Player2_bpFaced, Match_Winner)
-GS <- model_data %>% filter(tourney_level == "G")
+#GS <- model_data %>% filter(tourney_level == "G")
 #I've taken out tourney_level in my model_data so I'll just have to change that if I want to subset by Grand Slam
 #I've also removed round which I need to take into account if I want to subset by finals
 
@@ -299,19 +294,31 @@ test_data_2 <- model_2[-train_indices_2, ]
 
 model_rf2 <- ranger(Match_Winner ~ ., data = train_data_2)
 (default_rmse <- sqrt(model_rf2$prediction.error))
+```
 
+
+```{r default predictions}
 predictions_rf2 <- predict(model_rf2, data = test_data_2)$predictions
-confusion_matrix1 <- confusionMatrix(predictions_rf2, data = test_data_2$Match_Winner)
-confusion_matrix1
+test_data_2$Predictions1 <- predictions_rf2
 
-test_data_2$predicted_winner <- predictions_rf2
-player_wins_2 <- aggregate(predicted_winner ~ Player1, data = test_data_2, FUN = sum)
-
+best_players_rf2 <- test_data_2 %>%
+  group_by(Player1) %>%
+  summarize(win_count = sum(Predictions1 == 1),
+            total_count = sum(Player1 == Player1)) %>%
+  mutate(win_percentage = win_count / total_count) %>%
+  top_n(10, win_count) %>%
+  arrange(desc(win_count))
 
 ```
 
 
-Okay, I need to do all the hyperparameter tuning stuff and run the model again. I can subset by Grand Slams too.
+```{r default confusion matrix}
+confusion_matrix1 <- confusionMatrix(predictions_rf2, data = test_data_2$Match_Winner)
+confusion_matrix1
+```
+
+
+Okay, I need to do all the hyperparameter tuning stuff and run the model again. I can subset by Grand Slams too if I have time.
 
 ```{r hyperparameter tuning}
 # create hyperparameter grid
@@ -365,18 +372,19 @@ predictions_rf3 <- predict(model_rf3, data = test_data_2)$predictions
 confusion_matrix2 <- confusionMatrix(predictions_rf3, data = test_data_2$Match_Winner)
 confusion_matrix2
 
-test_data_2$predicted_winner <- predictions_rf3
+test_data_2$Predictions2 <- predictions_rf3
 
-player1_wins <- test_data_2[test_data_2$Match_Winner == 1, ]
-win_counts <- table(player1_wins$Player1)
-sorted_counts <- sort(win_counts, decreasing = TRUE)
-sorted_counts
+best_players_rf3 <- test_data_2 %>%
+  group_by(Player1) %>%
+  summarize(win_count = sum(Predictions2 == 1),
+            total_count = sum(Player1 == Player1)) %>%
+  mutate(win_percentage = win_count / total_count) %>%
+  top_n(10, win_count) %>%
+  arrange(desc(win_count))
+
 ```
 
-This shows Nadal, Djokovic and Federer now. This is just the number of wins for the players so a better metric would be to get the win percentage. I think I can do this by getting the number of matches each of the (maybe top 10) players played in the test data and then go wins divided by matches. 
 
-
-I need to convert all the categorical variables to factors and then I'm just going to subset the data to include the 53 players with the most frequent wins so I can still use a random forest. 
 
 
 
