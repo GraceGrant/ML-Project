@@ -232,8 +232,105 @@ Lastly, I had to perform target engineering to establish an outcome variable to 
 I made use of a random forest model model to process my data and perform predictions. Random forests are extensions or modifications of bagged decision trees and build a series of de-correlated trees to improve predictive performance. They have become a popular out-of-the-box learning algorithm because they enjoy good predictive performance and require minimal hyperparameter tuning @boehmke2019hands. My model had 19 features with a binary target variable, making it a classification problem. I constructed two random forest models, a baseline model using the default hyperparameters as outlined by @boehmke2019hands and a second model based on the hyperparamater tuning done via a grid search. The predictions from the hypertuned model as well as its accuracy measures are presented and discussed below, including comparisons with the default model. 
 
 # Results and discussion
-The following table shows the predictions from my hypertuned model, indicating that Roger Federer is the GOAT based on win percentage. 
-```{r results='asis'}
+The following table shows the predictions from my hypertuned model, indicating that Roger Federer is the GOAT based on win percentage. Djokovic and Nadal follow closely behind, while Andy Murray and Gael Monfils have the fourth and fifth highest win percentages, respectively.
+```{r model prep}
+model_again <- model_prep_attempt(result_Large_events)
 
+#I need to assign numerical values to my tournament names
+model_again <- separate(model_again, tourney_id, into = c("year", "tournament_id"), sep = "-")
+model_again <- model_again %>% select(-year)
+
+model_again <- model_again %>%
+  mutate(tournament_id = ifelse(tournament_id == "M006", "404", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "M007", "403", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0410", "410", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "M021", "1536", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "M009", "416", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0421", "421", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "M024", "422", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0352", "352", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0605", "605", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0403", "403", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0404", "404", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0416", "416", tournament_id)) %>% 
+    mutate(tournament_id = ifelse(tournament_id == "0422", "422", tournament_id))
+
+
+#Lastly, I need to assign numerical values to my surfaces and then I'm good to go
+model_again <- model_again %>%
+  mutate(surface_number = as.integer(as.factor(surface)))
+
+#I need to convert all my categorical variables into factors
+model_again$surface_number <- as.factor(model_again$surface_number)
+model_again$tournament_id <- as.factor(model_again$tournament_id)
+model_again$Match_Winner <- as.factor(model_again$Match_Winner)
+
+#Now to the actual model data frame
+model_2 <- model_again %>% select(tournament_id, surface_number, minutes, Player1, Player2, Player1_Rank, Player2_Rank, 
+                         Player1_ht, Player2_ht, Player1_age, Player2_age, Player1_1stin, Player2_1stin, Player1_ace, Player2_ace,
+                         Player1_bpSaved, Player2_bpSaved, Player1_bpFaced, Player2_bpFaced, Match_Winner)
+
+#I've taken out tourney_level in my model_data so I'll just have to change that if I want to subset by Grand Slam
+#I've also removed round which I need to take into account if I want to subset by finals
+
+model_2$Player1_age <- round(model_2$Player1_age)
+model_2$Player2_age <- round(model_2$Player2_age)
 ```
+
+
+```{r default}
+set.seed(123)  # Set seed for reproducibility
+train_indices_2 <- sample(1:nrow(model_2), 0.7 * nrow(model_2)) #training set 70% and testing set 30%
+train_data_2 <- model_2[train_indices_2, ]
+test_data_2 <- model_2[-train_indices_2, ]
+
+model_rf2 <- ranger(Match_Winner ~ ., data = train_data_2)
+(default_rmse <- sqrt(model_rf2$prediction.error))
+
+predictions_rf2 <- predict(model_rf2, data = test_data_2)$predictions
+test_data_2$Predictions1 <- predictions_rf2
+
+best_players_rf2 <- test_data_2 %>%
+  group_by(Player1) %>%
+  summarize(win_count = sum(Predictions1 == 1),
+            total_count = sum(Player1 == Player1)) %>%
+  mutate(win_percentage = win_count / total_count) %>%
+  top_n(10, win_count) %>%
+  arrange(desc(win_count))
+```
+
+```{r hypertuned model}
+model_rf3 <- ranger(
+  Match_Winner ~ ., 
+  data = train_data_2,
+  mtry = 4,
+  min.node.size = 1,
+  replace = FALSE,
+  sample.fraction = 0.63,
+  seed = 123
+)
+
+predictions_rf3 <- predict(model_rf3, data = test_data_2)$predictions
+test_data_2$Predictions2 <- predictions_rf3
+
+best_players_rf3 <- test_data_2 %>%
+  group_by(Player1) %>%
+  summarize(win_count = sum(Predictions2 == 1),
+            total_count = sum(Player1 == Player1)) %>%
+  mutate(win_percentage = win_count / total_count) %>%
+  top_n(9, win_count) %>%
+  arrange(desc(win_count))
+
+best_players_rf3 <- best_players_rf3 %>% top_n(5, win_percentage) %>% arrange(desc(win_percentage)) %>% 
+    mutate (Player = c("Roger Federer", "Novak Djokovic", "Rafael Nadal", "Andy Murray", "Gael Monfils")) %>%
+    select(Player, win_percentage, win_count)
+```
+
+```{r results='asis'}
+predictions_table <- xtable(best_players_rf3, caption = "The Best of Tennis")
+predictions_table
+```
+
+
+
 
