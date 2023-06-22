@@ -146,9 +146,10 @@ bar_top
 ```
 
 This graph illustrates the dominance of the Big 3 in Grand Slam wins, with Nadal holding the most titles at 22 as of 2022. The following table further supports the Big 3's supremacy, showing the winners of each Grand Slam from 2003 to 2019. 
-```{r GS winners table}
+```{r results='asis'}
 merged <- GS_winners_table(finals)
-GS_table <- xtable(merged)
+GS_table <- options(xtable.comment = FALSE)
+GS_table <- xtable(merged, caption = "Grand Slam Winners Since 2003")
 GS_table
 ```
 
@@ -208,3 +209,11 @@ bar_percent
 
 The grouped chart sheds further light into each of the Big 3's statistics against top 5 players, averaging across matches. Djokovic has the highest win percentage, Nadal the highest breakpoints saved and Federer the highest ace percentage. Federer is known to have a strong serve that is difficult to read so it is understandable that his ace percentage is higher than the others, while Nadal is known to fight back when he is at a disadvantage, hence the high breakpoints saved. However, I would argue that win percentage is the most important statistic to consider because this relates directly to number of wins and titles. This graph shows that Djokovic has the best record against top 5 players in the main ATP events, winning approximately 62 percent of his matches. 
 
+```{r results='asis'}
+time <- Result %>% filter(grepl("All", Type)) %>% select(Player, TTaken)
+time$TTaken <- round(time$TTaken)
+time_table <- xtable(time, caption = "Average Time Taken")
+time_table
+```
+
+This final table provides an overview of the Big 3's average match times across all games. Roger Federer is shown to take the least amount of time to finish matches, averaging at 109 minutes or approximately 1 hour and 45 minutes. This is quite significantly different from Nadal and Djokovic, suggesting that Federer prefers a shorter game format. This may link to his playing style which involves big serves and net play which generally induces shorter matches due to less rallies. 
