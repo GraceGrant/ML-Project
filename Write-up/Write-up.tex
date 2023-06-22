@@ -395,16 +395,16 @@ predictions. Random forests are extensions or modifications of bagged
 decision trees and build a series of de-correlated trees to improve
 predictive performance. They have become a popular out-of-the-box
 learning algorithm because they enjoy good predictive performance and
-require minimal hyperparameter tuning Boehmke \& Greenwell
-(\protect\hyperlink{ref-boehmke2019hands}{2019}). My model had 19
-features with a binary target variable, making it a classification
-problem. I constructed two random forest models, a baseline model using
-the default hyperparameters as outlined by Boehmke \& Greenwell
-(\protect\hyperlink{ref-boehmke2019hands}{2019}) and a second model
-based on the hyperparamater tuning done via a grid search. The
-predictions from the hypertuned model as well as its accuracy measures
-are presented and discussed below, including comparisons with the
-default model.
+require minimal hyperparameter tuning
+(\protect\hyperlink{ref-boehmke2019hands}{Boehmke \& Greenwell, 2019}).
+My model had 19 features with a binary target variable, making it a
+classification problem. I constructed two random forest models, a
+baseline model using the default hyperparameters as outlined by Boehmke
+\& Greenwell (\protect\hyperlink{ref-boehmke2019hands}{2019}) and a
+second model based on the hyperparamater tuning done via a grid search.
+The predictions from the hypertuned model as well as its accuracy
+measures are presented and discussed below, including comparisons with
+the default model.
 
 \hypertarget{results-and-discussion}{%
 \section{Results and discussion}\label{results-and-discussion}}
@@ -443,7 +443,118 @@ point to why he appears in the top winners.
 
 Although the results make intuitive sense, it is also necessary to test
 the predictive performance of the model to see how accurate these
-predictions are based on the data.
+predictions are based on the data. I compare the accuracy, sensitivity
+and specificity of the baseline and tuned models to highlight their
+predictive performance.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{rlrrr}
+  \hline
+ & Model & Accuracy & Sensitivity & Specificity \\ 
+  \hline
+1 & Baseline model & 0.92 & 0.93 & 0.91 \\ 
+  2 & Tuned model & 0.92 & 0.92 & 0.91 \\ 
+   \hline
+\end{tabular}
+\caption{Accuracy Across the Baseline and Tuned Models} 
+\end{table}
+
+This table, firstly, shows that both models have high and almost
+identical results across the accuracy measures. This could be due to the
+fact that the tuned model has very similar hyperparameters to the
+default model. The best model, as determined by the grid search, is
+given below.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{rrrlrrr}
+  \hline
+ & mtry & min.node.size & replace & sample.fraction & rmse & perc\_gain \\ 
+  \hline
+1 & 4.00 & 1.00 & FALSE & 0.63 & 0.30 & 2.73 \\ 
+   \hline
+\end{tabular}
+\caption{Grid Search Results} 
+\end{table}
+
+The mtry and node size hyperparameters determined by the grid search are
+the same as those in the baseline model and both models also have the
+same number of trees (500). This could account for the similarity in
+results. The actual values in the table indicate that the model is
+highly accurate and predicts the data well. The sensitivity shows that
+the model predicts successes (i.e.~player 1 winning) correctly 92
+percent of the time and predicts failures (player 1 losing) correctly 90
+percent of the time.
+
+An additional evaluation of the model considers errors within the random
+forest. One metric is the Out-of-Bag (OOB) prediction error which is
+calculated by evaluating the predictions of each tree on the out-of-bag
+samples that were not used during training
+(\protect\hyperlink{ref-boehmke2019hands}{Boehmke \& Greenwell, 2019}).
+The RMSE, which is just the squareroot of the OOB prediction error, is
+another useful metric to understand the model's errors. The following
+output shows the errors from the baseline model and the tuned model.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{rlrr}
+  \hline
+ & Model & OOB & RMSE \\ 
+  \hline
+1 & Baseline model & 9.24 & 30.39 \\ 
+  2 & Tuned model & 8.66 & 29.56 \\ 
+   \hline
+\end{tabular}
+\caption{Errors Across the Baseline and Tuned Models in Percent} 
+\end{table}
+
+These results show that the tuned model performs slightly better than
+the baseline, with a lower OOB prediction error and RMSE. This indicates
+that the tuned model is a better predictive model.
+
+\hypertarget{feature-importance}{%
+\subsection{Feature importance}\label{feature-importance}}
+
+The final element of evaluating the random forest is assessing the
+feature importance using both the impurity and permutation measures. The
+impurity-based measure bases feature importance on how much each feature
+contributes to reducing impurity when making splits in the trees.
+Permutation-based feature importance, on the other hand, measures how
+much the accuracy of the model deteriorates when the values of a feature
+are randomly shuffled. Both are necessary to determine the ranking of
+each feature's importance in the model.
+
+\includegraphics{Write-up_files/figure-latex/feature importance-1.pdf}
+
+Both feature importance graphs indicate that breakpoints faced, rank and
+breakpoints saved are the most important features in predicting the
+match winner. This makes sense as, understandably, higher ranked players
+generally win more matches, while breakpoints are highly important in
+tennis matches. Players gain advantage by breaking their opponents
+service games which is normally directly correlated with winning
+matches. These graphs therefore align with general tennis practice.
+
+\hypertarget{conclusion}{%
+\section{Conclusion}\label{conclusion}}
+
+This machine learning model provided an accurate prediction of who the
+best tennis players of this generation are. I used a random forest
+trained on a dataset consisting of all the ATP matches in the main
+events from 2003 to 2019. Based on this model, I predict Roger Federer
+to be the greatest of all time. However, there are two caveats to this
+conclusion. Firstly, the data only runs to 2019 which does not take into
+account the most recent events in tennis i.e.~Novak Djokovic winning his
+23rd Grand Slam at the 2023 Roland Garros. Because of this feat, many
+are hailing him as the GOAT. Additionally, I have only 19 features in my
+model, relating to player characteristics and match statistics. To say
+someone is a great player goes beyond these metrics - popularity on and
+off the court, viewership, prize-money and many other factors also play
+a contributing role. As a Federer fan, I am very pleased with the
+results of the model but it is very difficult to settle the debate of
+the GOAT of tennis. Each of the Big 3 - Nadal, Djokovic and Federer -
+have achieved exceptional results and will be considered the greatest
+players of this generation and the greatest players of all time.
 
 \hypertarget{refs}{}
 \begin{CSLReferences}{1}{0}
