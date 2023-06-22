@@ -20,7 +20,8 @@ gc() # garbage collection - It can be useful to call gc after a large object has
 library(tidyverse)
 library(lubridate)
 library(RColorBrewer)
-library(kableExtra)
+library(vip)
+library(gridExtra)
 library(xtable)
 library(caret)
 library(ranger)
@@ -382,6 +383,44 @@ best_players_rf3 <- test_data_2 %>%
   top_n(10, win_count) %>%
   arrange(desc(win_count))
 
+```
+
+I have my predictions for both models (Roger Federer is the best so I'm pretty happy) and I have my confusion matrices. I think I'll just show the results from my tuned model but I could do some comparison. I also still need to figure out how to extract the information from the confusion matrix.
+
+Lastly, feature importance
+```{r feature importance}
+# re-run model with impurity-based variable importance
+rf_impurity <- ranger(
+  formula = Match_Winner ~ ., 
+  data = train_data_2, 
+  num.trees = 2000,
+  mtry = 4,
+  min.node.size = 1,
+  sample.fraction = .63,
+  replace = FALSE,
+  importance = "impurity",
+  verbose = FALSE,
+  seed  = 123
+)
+
+# re-run model with permutation-based variable importance
+rf_permutation <- ranger(
+  formula = Match_Winner ~ ., 
+  data = train_data_2, 
+  num.trees = 2000,
+  mtry = 4,
+  min.node.size = 1,
+  sample.fraction = .63,
+  replace = FALSE,
+  importance = "permutation",
+  verbose = FALSE,
+  seed  = 123
+)
+
+p1 <- vip::vip(rf_impurity, num_features = 19, bar = FALSE)
+p2 <- vip::vip(rf_permutation, num_features = 19, bar = FALSE)
+
+gridExtra::grid.arrange(p1, p2, nrow = 1)
 ```
 
 
