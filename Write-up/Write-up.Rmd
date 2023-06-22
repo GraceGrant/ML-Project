@@ -26,8 +26,8 @@ Thesis_FP: FALSE
 # Comment: ----- Follow this pattern for up to 5 authors
 AddTitle: TRUE # Use FALSE when submitting to peer reviewed platform. This will remove author names.
 Author1: "Grace Grant - 21653488"  # First Author - note the thanks message displayed as an italic footnote of first page.
-#Ref1: "Some Institution, Cape Town, South Africa" # First Author's Affiliation
-#Email1: "nfkatzke\\@gmail.com" # First Author's Email address
+Ref1: "Stellenbosch University, Stellenbosch, South Africa" # First Author's Affiliation
+Email1: "21653488\\@sun.ac.za" # First Author's Email address
 
 
 # Comment out below to remove both. JEL Codes only given if keywords also given.
@@ -38,7 +38,7 @@ Author1: "Grace Grant - 21653488"  # First Author - note the thanks message disp
 #BottomLFooter: $Title$
 #BottomCFooter:
 #TopLHeader: \leftmark # Adds section name at topleft. Remove comment to add it.
-BottomRFooter: "\\footnotesize Page \\thepage" # Add a '#' before this line to remove footer.
+#BottomRFooter: "\\footnotesize Page \\thepage" # Add a '#' before this line to remove footer.
 addtoprule: TRUE
 addfootrule: TRUE               # Use if footers added. Add '#' to remove line.
 
@@ -137,7 +137,7 @@ rankings <- Ranking_Prep_Function(Lst_rankings) %>% group_by(year = lubridate::y
 The Open Era of tennis has seen the world's greatest players and some of the most riveting and exceptional performances in big events. Players such as Rod Laver, John McEnroe, Ivan Lendl and Pete Sampras made a name for themselves over the course of their careers but it is arguably the Big 3 - Roger Federer, Rafael Nadal and Novak Djokovic - who have captured the world's attention and have elevated the sport beyond anything seen before. The following machine learning project thus aims to predict which of these men should be considered the GOAT - the greatest of all time. I make use of a random forest model applied to a dataset containing all the matches in the main ATP tour events from 2003, when Federer won his first Grand Slam. However, I first provide descriptive statistics to better understand the nature of the data as well as to gain insight into the Big 3's performance.
 
 # Descriptive statistics
-Number of Grand Slams is the most commonly used metric in the debate of the best player. The following graph highlights this, showing the top 10 Grand Slam winners from 1968 to 2022.
+These descriptive statistics make use of the ATP data from 1968, the start of the Open Era, before focusing on the current period with Nadal, Federer and Djokovic. I have chosen to first look at the top Grand Slam wins over time, choosing the players with top 10 most titles. Number of Grand Slams is the most commonly used metric in the debate of the best player and can thus be used to understand which players in the Open Era gained recognition for their performances. The following graph highlights this, showing the top 10 Grand Slam winners from 1968 to 2022.
 
 ```{r GS winners}
 finals <- result_Large_events %>% filter(round == "F")
@@ -145,7 +145,9 @@ bar_top <- top_GS(finals)
 bar_top
 ```
 
-This graph illustrates the dominance of the Big 3 in Grand Slam wins, with Nadal holding the most titles at 22 as of 2022. The following table further supports the Big 3's supremacy, showing the winners of each Grand Slam from 2003 to 2019. 
+This graph illustrates the dominance of the Big 3 in Grand Slam wins, with Nadal holding the most titles at 22 as of 2022. The other seven players in the graph, who also had illustrious careers, lag quite far behind Nadal, Federer and Djokovic. Pete Sampras, for example, who was still competing when Federer began his career, only has 14 Grand Slams to his name while the other players have even fewer. This shows how the Big 3 have elevated the level of the game and raised the bar for what is considered high-level achievement.
+
+The following table further supports the Big 3's supremacy, showing the winners of each Grand Slam from 2003 to 2019. 
 ```{r results='asis'}
 merged <- GS_winners_table(finals)
 GS_table <- options(xtable.comment = FALSE)
@@ -153,7 +155,8 @@ GS_table <- xtable(merged, caption = "Grand Slam Winners Since 2003")
 GS_table
 ```
 
-This is evidence of the extent to which Nadal, Federer and Djokovic have dominated the Grand Slam circuit. Since 2003, when Federer won his first Grand Slam, the Big 3 have won 55 out of the 68 tournaments in this period, with only only Andy Murray and Stan Wawrinka winning more than one each of all the other players. There is therefore no doubt that these top 3 players will rival each other as being the greatest of all time. 
+This is evidence of the extent to which Nadal, Federer and Djokovic have dominated the Grand Slam circuit. Since 2003, when Federer won his first Grand Slam, the Big 3 have won 55 out of the 68 tournaments in this period, with only Andy Murray and Stan Wawrinka winning more than one each of all the other players. There is therefore no doubt that these top 3 players will rival each other as being the greatest of all time. 
+
 Beyond showing Grand Slam wins, the data also provides additional information on the statistics of each match played relating to length of the game, serving and break points statistics and the surface of the tournament among others. The following tables and figures illustrate how each of the Big 3's wins are broken down and relate to some of these variables.
 
 ```{r more descriptive}
@@ -217,3 +220,18 @@ time_table
 ```
 
 This final table provides an overview of the Big 3's average match times across all games. Roger Federer is shown to take the least amount of time to finish matches, averaging at 109 minutes or approximately 1 hour and 45 minutes. This is quite significantly different from Nadal and Djokovic, suggesting that Federer prefers a shorter game format. This may link to his playing style which involves big serves and net play which generally induces shorter matches due to less rallies. 
+
+These graphs and tables provide a sufficient overview of player performance and offers a comparison of the Big 3''s results and more specifics of their playing style and outcomes. However, to obtain a more definitive answer to the question of the GOAT, I make use of a random forest model which is discussed and interpreted in the next sections.
+
+# Data and methodology
+I have made use of a dataset that includes all the ATP matches from 1968 to 2022, within which is included match and player statistics. I merged these documents and filtered the data frame to include only main tour events i.e. Grand Slams, Masters and Tour Finals. These are the most important events in the tennis circuit and the ones in which the top players participate the most. I further subset the data to include matches from 2003, when Roger Federer won his first Grand Slam at Wimbledon. This allows me to focus on the time period of the Big 3 who are at the centre of the debate surrounding the GOAT. There is also a large amount of missing information in earlier dates, particularly in the 1960s, 70s and 80s, so subsetting to start at 2003 avoids issues related to NA values. Finally, I selected the features I deemed most relevant to my model to arrive at the final data frame. 
+
+## The random forest model
+Why I chose a random forest - reference textbook here.
+
+### Target and feature engineering
+bimodal distribution, factors
+
+### Hyperparameter tuning
+
+# Results and discussion

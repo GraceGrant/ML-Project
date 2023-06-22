@@ -10,7 +10,7 @@ top_GS <- function(finals){
     g <- GS %>% ggplot() +
         geom_bar(aes(x = winner_name, y = winner_count, fill = winner_name), stat = "identity") +
         theme_bw() +
-        labs(title = "Top 10 Grand Slam Winners", x = "Player", y = "Number of Grand Slams") +
+        labs(title = "Top 10 Grand Slam Winners", x = NULL, y = "Number of Grand Slams") +
         theme(legend.position = "none") +
         scale_fill_brewer(palette = "Set3") +
         theme(axis.text.x = element_text(angle = 45, vjust = 1))
