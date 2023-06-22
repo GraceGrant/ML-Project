@@ -293,10 +293,11 @@ winners of each Grand Slam from 2003 to 2019.
 This is evidence of the extent to which Nadal, Federer and Djokovic have
 dominated the Grand Slam circuit. Since 2003, when Federer won his first
 Grand Slam, the Big 3 have won 55 out of the 68 tournaments in this
-period, with only only Andy Murray and Stan Wawrinka winning more than
-one each of all the other players. There is therefore no doubt that
-these top 3 players will rival each other as being the greatest of all
-time. Beyond showing Grand Slam wins, the data also provides additional
+period, with only Andy Murray and Stan Wawrinka winning more than one
+each of all the other players. There is therefore no doubt that these
+top 3 players will rival each other as being the greatest of all time.
+
+Beyond showing Grand Slam wins, the data also provides additional
 information on the statistics of each match played relating to length of
 the game, serving and break points statistics and the surface of the
 tournament among others. The following tables and figures illustrate how
@@ -370,24 +371,87 @@ are at the centre of the debate surrounding the GOAT. There is also a
 large amount of missing information in earlier dates, particularly in
 the 1960s, 70s and 80s, so subsetting to start at 2003 avoids issues
 related to NA values. Finally, I selected the features I deemed most
-relevant to my model to arrive at the final data frame.
+relevant to my model to arrive at the final data frame. These features
+included tournament names and surfaces, player characteristics - such as
+their height and age - and various match statistics linked to time
+taken, breakpoints faced and saved, aces and first serves in. These
+features were included for both the winner and the loser of each match.
+Additional feature engineering involved turning categorical variables,
+such as surface, into factors to ensure the model accurately processed
+the data.
+
+Lastly, I had to perform target engineering to establish an outcome
+variable to use for predictions in the model. I created a random binary
+variable and assigned the winner and loser of each game to player 1 and
+player 2 based on the random binary variable. This ensured that the new
+match winner column had an even split between player 1 winning or losing
+each match and could be used as the target variable.
 
 \hypertarget{the-random-forest-model}{%
 \subsection{The random forest model}\label{the-random-forest-model}}
 
-Why I chose a random forest - reference textbook here.
-
-\hypertarget{target-and-feature-engineering}{%
-\subsubsection{Target and feature
-engineering}\label{target-and-feature-engineering}}
-
-bimodal distribution, factors
-
-\hypertarget{hyperparameter-tuning}{%
-\subsubsection{Hyperparameter tuning}\label{hyperparameter-tuning}}
+I made use of a random forest model model to process my data and perform
+predictions. Random forests are extensions or modifications of bagged
+decision trees and build a series of de-correlated trees to improve
+predictive performance. They have become a popular out-of-the-box
+learning algorithm because they enjoy good predictive performance and
+require minimal hyperparameter tuning Boehmke \& Greenwell
+(\protect\hyperlink{ref-boehmke2019hands}{2019}). My model had 19
+features with a binary target variable, making it a classification
+problem. I constructed two random forest models, a baseline model using
+the default hyperparameters as outlined by Boehmke \& Greenwell
+(\protect\hyperlink{ref-boehmke2019hands}{2019}) and a second model
+based on the hyperparamater tuning done via a grid search. The
+predictions from the hypertuned model as well as its accuracy measures
+are presented and discussed below, including comparisons with the
+default model.
 
 \hypertarget{results-and-discussion}{%
 \section{Results and discussion}\label{results-and-discussion}}
+
+The following table shows the predictions from my hypertuned model,
+indicating that Roger Federer is the GOAT based on win percentage.
+Djokovic and Nadal follow closely behind, while Andy Murray and Gael
+Monfils have the fourth and fifth highest win percentages, respectively.
+
+\begin{verbatim}
+## [1] 0.3038952
+\end{verbatim}
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{rlrr}
+  \hline
+ & Player & win\_percentage & win\_count \\ 
+  \hline
+1 & Roger Federer & 0.89 & 110 \\ 
+  2 & Novak Djokovic & 0.88 & 108 \\ 
+  3 & Rafael Nadal & 0.86 & 107 \\ 
+  4 & Andy Murray & 0.84 &  67 \\ 
+  5 & Gael Monfils & 0.82 &  45 \\ 
+   \hline
+\end{tabular}
+\caption{The Best of Tennis} 
+\end{table}
+
+The model produces results that make sense. The Big 3 are the top three
+highest performers, while Andy Murray (who has sometimes been grouped
+into the Big 4 category) is in fourth place. I was surprised to see Gael
+Monfils finish in fifth place given that he has never won a major but
+the data set looks at matches across all main ATP events which could
+point to why he appears in the top winners.
+
+Although the results make intuitive sense, it is also necessary to test
+the predictive performance of the model to see how accurate these
+predictions are based on the data.
+
+\hypertarget{refs}{}
+\begin{CSLReferences}{1}{0}
+\leavevmode\vadjust pre{\hypertarget{ref-boehmke2019hands}{}}%
+Boehmke, B. \& Greenwell, B.M. 2019. \emph{Hands-on machine learning
+with r}. CRC press.
+
+\end{CSLReferences}
 
 \bibliography{Tex/ref}
 

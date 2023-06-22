@@ -229,7 +229,7 @@ I have made use of a dataset that includes all the ATP matches from 1968 to 2022
 Lastly, I had to perform target engineering to establish an outcome variable to use for predictions in the model. I created a random binary variable and assigned the winner and loser of each game to player 1 and player 2 based on the random binary variable. This ensured that the new match winner column had an even split between player 1 winning or losing each match and could be used as the target variable.
 
 ## The random forest model
-I made use of a random forest model model to process my data and perform predictions. Random forests are extensions or modifications of bagged decision trees and build a series of de-correlated trees to improve predictive performance. They have become a popular out-of-the-box learning algorithm because they enjoy good predictive performance and require minimal hyperparameter tuning @boehmke2019hands. My model had 19 features with a binary target variable, making it a classification problem. I constructed two random forest models, a baseline model using the default hyperparameters as outlined by @boehmke2019hands and a second model based on the hyperparamater tuning done via a grid search. The predictions from the hypertuned model as well as its accuracy measures are presented and discussed below, including comparisons with the default model. 
+I made use of a random forest model model to process my data and perform predictions. Random forests are extensions or modifications of bagged decision trees and build a series of de-correlated trees to improve predictive performance. They have become a popular out-of-the-box learning algorithm because they enjoy good predictive performance and require minimal hyperparameter tuning [@boehmke2019hands]. My model had 19 features with a binary target variable, making it a classification problem. I constructed two random forest models, a baseline model using the default hyperparameters as outlined by @boehmke2019hands and a second model based on the hyperparamater tuning done via a grid search. The predictions from the hypertuned model as well as its accuracy measures are presented and discussed below, including comparisons with the default model. 
 
 # Results and discussion
 The following table shows the predictions from my hypertuned model, indicating that Roger Federer is the GOAT based on win percentage. Djokovic and Nadal follow closely behind, while Andy Murray and Gael Monfils have the fourth and fifth highest win percentages, respectively.
@@ -330,6 +330,10 @@ best_players_rf3 <- best_players_rf3 %>% top_n(5, win_percentage) %>% arrange(de
 predictions_table <- xtable(best_players_rf3, caption = "The Best of Tennis")
 predictions_table
 ```
+
+The model produces results that make sense. The Big 3 are the top three highest performers, while Andy Murray (who has sometimes been grouped into the Big 4 category) is in fourth place. I was surprised to see Gael Monfils finish in fifth place given that he has never won a major but the data set looks at matches across all main ATP events which could point to why he appears in the top winners. 
+
+Although the results make intuitive sense, it is also necessary to test the predictive performance of the model to see how accurate these predictions are based on the data.
 
 
 
