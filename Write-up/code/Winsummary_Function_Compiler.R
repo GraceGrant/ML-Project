@@ -28,7 +28,7 @@ Winsummary_Function_Compiler <- function(result_Large_events,
                                      ifelse(Opp_Rank >= 50, "Weak Player", NA))) %>%
         left_join(., playerinfo, by = "player_id")
 
-    # Exploring phase:
+
     Result_Win <-
 
         bind_rows(
@@ -125,8 +125,7 @@ Winsummary_Function_Compiler <- function(result_Large_events,
                 summarise(TTaken = mean(minutes, na.rm=T)) %>%
                 rename(Type = Ht),
 
-            # Check rounds:
-            # games_df$round %>% unique
+
 
             games_df %>% mutate(Round_Type = ifelse(!round %in% c("QF", "SF", "F"), "Early Rounds", "Final Rounds")) %>%
                 group_by(Round_Type) %>%
@@ -136,16 +135,8 @@ Winsummary_Function_Compiler <- function(result_Large_events,
 
 
 
-    # The following is a great summary in how to split strings that are not vanilla...
-    # Aim: we want to split the score into the amount of games played - in order to assess how frequently e.g. aces are hit.
-    # Naturally, more sets mean more aces, and tournaments with more sets mean more aces - so let's first count the amount of serving games - dividing it by two to crudely proxy for amount of services games played...
-    # You'd typically start by trying to 'str_split' a vector until it works, and try and get a tough one.
-    # E.g. 7-6(3) states that the set was won in a tie breaker, so we want to drop the brackets to sum the games...
 
-    # After some playing around (make sure you can unscramble the following to make sense of it), the following can now be made a function, and then be used in a map...
-    # str_split("6-2(3) 6-3", " ") %>% .[[1]] %>% substr(., 1, 3) %>% str_split(., "-") %>% reduce(c) %>% as.numeric() %>% sum()str_split("6-2(3) 6-3", " ") %>% .[[1]] %>% substr(., 1, 3) %>% str_split(., "-") %>% reduce(c) %>% as.numeric() %>% sum()    str_split("6-2(3) 6-3", " ") %>% .[[1]] %>% substr(., 1, 3) %>% str_split(., "-") %>% reduce(c) %>% as.numeric() %>% sum()
 
-    # Checking the data - I also notice some scores have RET, for retired, and W/O for walkover... let's ignore those..
 
 
 
@@ -156,7 +147,7 @@ Winsummary_Function_Compiler <- function(result_Large_events,
 
     }
 
-    # I will now do a rowwise operation for this one:
+
     games_df_sumgames <-
         games_df %>%
         dplyr::rowwise() %>%
@@ -191,8 +182,7 @@ Winsummary_Function_Compiler <- function(result_Large_events,
                 summarise(Aces_Perc = sum(Total_Aces, na.rm=T)/sum(games_in_match, na.rm=T)) %>%
                 rename(Type = Ht),
 
-            # Check rounds:
-            # games_df$round %>% unique
+
 
             games_df_sumgames %>% mutate(Round_Type = ifelse(!round %in% c("QF", "SF", "F"), "Early Rounds", "Final Rounds")) %>%
                 group_by(Round_Type) %>%
@@ -227,8 +217,7 @@ Winsummary_Function_Compiler <- function(result_Large_events,
                 summarise(BreakPoints_Saved = sum(Total_BP_Saved, na.rm=T)/sum(games_in_match, na.rm=T)) %>%
                 rename(Type = Ht),
 
-            # Check rounds:
-            # games_df$round %>% unique
+
 
             games_df_sumgames %>% mutate(Round_Type = ifelse(!round %in% c("QF", "SF", "F"), "Early Rounds", "Final Rounds")) %>%
                 group_by(Round_Type) %>%
