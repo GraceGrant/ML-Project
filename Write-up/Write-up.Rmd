@@ -199,6 +199,12 @@ grid.arrange(plot1, plot2, plot3,nrow=1)
 
 ```
 
+These graphs, referencing surfaces by their colour, show each of Nadal, Federer and Djokovic's win percentages on each surface. This indicates that Nadal has a much higher win record on clay than the other two, confirming his status as the King of Clay. All players have the highest win records on hard court, which may partly link to this being the surface with the most number of matches, but Federer and Djokovic have a more even split across surfaces, indicating their versatility.
 
+```{r grouped bar}
+bar_percent <- percentage_bar(Result)
+bar_percent
+```
 
+The grouped chart sheds further light into each of the Big 3's statistics against top 5 players, averaging across matches. Djokovic has the highest win percentage, Nadal the highest breakpoints saved and Federer the highest ace percentage. Federer is known to have a strong serve that is difficult to read so it is understandable that his ace percentage is higher than the others, while Nadal is known to fight back when he is at a disadvantage, hence the high breakpoints saved. However, I would argue that win percentage is the most important statistic to consider because this relates directly to number of wins and titles. This graph shows that Djokovic has the best record against top 5 players in the main ATP events, winning approximately 62 percent of his matches. 
 
