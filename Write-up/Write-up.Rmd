@@ -333,7 +333,68 @@ predictions_table
 
 The model produces results that make sense. The Big 3 are the top three highest performers, while Andy Murray (who has sometimes been grouped into the Big 4 category) is in fourth place. I was surprised to see Gael Monfils finish in fifth place given that he has never won a major but the data set looks at matches across all main ATP events which could point to why he appears in the top winners. 
 
-Although the results make intuitive sense, it is also necessary to test the predictive performance of the model to see how accurate these predictions are based on the data.
+Although the results make intuitive sense, it is also necessary to test the predictive performance of the model to see how accurate these predictions are based on the data. I compare the accuracy, sensitivity and specificity of the baseline and tuned models to highlight their predictive performance.
+```{r}
+confusion_matrix1 <- confusionMatrix(predictions_rf2, data = test_data_2$Match_Winner)
+confusion_matrix2 <- confusionMatrix(predictions_rf3, data = test_data_2$Match_Winner)
+
+accuracy <- tibble(
+  Model = c("Baseline model", "Tuned model"),
+  Accuracy = c(0.9182, 0.9173),
+  Sensitivity = c(0.9272, 0.9249),
+  Specificity = c(0.9093, 0.9096)
+) %>%
+  as.data.frame()
+
+accuracy_table <- xtable(accuracy, caption = "Accuracy Across the Baseline and Tuned Models")
+accuracy_table
+```
+
+This table, firstly, shows that both models have high and almost identical results across the accuracy measures. This could be due to the fact that the tuned model has very similar hyperparameters to the default model. The best model, as determined by the grid search, is given below.
+```{r}
+# create hyperparameter grid
+hyper_grid <- expand.grid(
+  mtry = floor(19 * c(.1, .15, .25, .333, .4)),
+  min.node.size = c(1, 3, 5, 10), 
+  replace = c(TRUE, FALSE),                               
+  sample.fraction = c(.5, .63, .8),                       
+  rmse = NA                                               
+)
+
+# execute full cartesian grid search
+for(i in seq_len(nrow(hyper_grid))) {
+  # fit model for ith hyperparameter combination
+  fit <- ranger(
+    formula         = Match_Winner ~ ., 
+    data            = train_data_2, 
+    num.trees       = 19 * 10,
+    mtry            = hyper_grid$mtry[i],
+    min.node.size   = hyper_grid$min.node.size[i],
+    replace         = hyper_grid$replace[i],
+    sample.fraction = hyper_grid$sample.fraction[i],
+    verbose         = FALSE,
+    seed            = 123,
+  )
+  # export OOB error 
+  hyper_grid$rmse[i] <- sqrt(fit$prediction.error)
+}
+
+# assess top 10 models
+hyper_grid_df <- hyper_grid %>%
+  arrange(rmse) %>%
+  mutate(perc_gain = (default_rmse - rmse) / default_rmse * 100) %>% slice(1)
+```
+
+```{r results='asis'}
+hyper_grid_table <- xtable(hyper_grid_df, caption = "Grid Search Results")
+hyper_grid_table
+```
+
+The mtry and node size hyperparameters determined by the grid search are the same as those in the baseline model and both models also have the same number of trees (500). This could account for the similarity in results. The actual values in the table indicate that the model is highly accurate and predicts the data well. The sensitivity shows that the model predicts successes (i.e. player 1 winning) correctly 92 percent of the time and predicts failures (player 1 losing) correctly 90 percent of the time. 
+
+An additional evaluation of the model 
+
+
 
 
 
